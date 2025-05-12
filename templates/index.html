@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Validator-tool</title>
+
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material-darker.min.css">
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet" />
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/style.css" />
+  <style>
+    body {
+      font-family: "Fira Code", monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar with Dropdowns -->
+  <div class="top-bar">
+    <select id="dropdown1" onchange="loadFiles()">
+      <option disabled selected>Loading EHRs...</option>
+    </select>
+    <select id="dropdown2">
+      <option disabled selected>Select a resourceType</option>
+    </select>
+  </div>
+
+  <!-- Main Input/Output Container with CodeMirror -->
+  <div class="container">
+    <div id="inputBox" class="editor"></div>
+    <div id="outputBox" class="editor readonly"></div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="actions">
+    <button onclick="processInput()">Run</button>
+    <button onclick="openCustomMapperModal()">Use Custom Mapper</button>
+    <button onclick="clearCustomMapper()">Reset Custom Mapper</button>
+  </div>
+
+  <!-- Modal for Custom Mapper -->
+  <div id="customMapperModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="storeCustomMapper()">&times;</span>
+      <h3>Enter Custom Mapper Template</h3>
+      <textarea id="customMapperBox" placeholder="Paste Go template mapper here..."></textarea>
+    </div>
+  </div>
+
+  <!-- CodeMirror JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+
+  <!-- Your JS -->
+  <script src="/static/script.js"></script>
+</body>
+</html>

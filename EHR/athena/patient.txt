@@ -1,0 +1,909 @@
+{{- $patient := . }}
+{
+  "resourceType": "Patient",
+  "id": "{{ $patient.patientid }}",
+  "name": [
+    {{ if $patient.preferredname }}
+    {
+      "use": "usual",
+      "given": ["{{ $patient.preferredname }}"]
+    },
+    {{ end }}
+    {{ if $patient.altfirstname }}
+    {
+      "use": "old",
+      "given": ["{{ $patient.altfirstname }}"]
+    },
+    {{ end }}
+    {
+      "use": "official",
+      "family": "{{ $patient.lastname }}",
+      "given": [
+        "{{ $patient.firstname }}"{{ if $patient.middlename }}, "{{ $patient.middlename }}"{{ end }}
+      ]{{ if $patient.suffix }},
+      "suffix": ["{{ $patient.suffix }}"]{{ end }},
+      "text": "{{ $patient.firstname }} {{ if $patient.middlename }}{{ $patient.middlename }} {{ end }}{{ $patient.lastname }}"
+    }
+  ],
+  "gender": "{{ $patient.genderidentity }}",
+  "birthDate": "{{ formatDate $patient.dob }}",
+  {{ if $patient.language6392code }}
+    "communication": [
+      {
+        "language": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/ValueSet/all-languages",
+              "code": "{{ $patient.language6392code }}"
+            }
+          ]
+        }
+      }
+    ],
+    {{ end }}
+  {{ if $patient.deceaseddate }}
+  "deceasedDateTime": "{{ formatDate $patient.deceaseddate }}",
+  {{ end }}
+  
+  "maritalStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus",
+        {{ if eq $patient.maritalstatus "U" }}
+        "code": "UNK",
+        "display": "unknown"
+        {{ else }}
+        "code": "{{ $patient.maritalstatus }}",
+        "display": "{{ getDisplayNameForMaritalCode $patient.maritalstatus }}"
+        {{ end }}
+      }
+    ]
+  },
+    {{ if $patient.contactname }}
+  "contact": [
+      {
+        "name": {
+          "text": "{{ $patient.contactname }}"
+        },
+        "relationship": [
+          {
+            "coding": [
+              {
+                "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+                "code": "SPO",
+                "display": "SPOUSE"
+              }
+            ]
+          }
+        ],
+        "telecom": [
+          {{ if $patient.contacthomephone }}
+          {
+            "system": "phone",
+            "value": "{{ $patient.contacthomephone }}",
+            "use": "home"
+          },
+          {{ end }}
+          {{ if $patient.mobilephone }}
+          {
+            "system": "phone",
+            "value": "{{ $patient.mobilephone }}",
+            "use": "mobile",
+            "extension": []
+          },
+          {{ end }}
+
+        ],
+        {{ if $patient.contactpreference }}
+        "extension": [
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/telecom/contactpreference",
+            "valueString": "{{ $patient.contactpreference }}"
+          }
+        ]
+        {{ end }}
+      }
+    ],
+    {{ end }}
+
+  "photo": [
+      {
+        "id": "patient-image",
+        "data": "{{ .context.patientImage }}"
+      },
+      {
+        "id": "driving-license-image",
+        "data": "{{ .context.driverLicenseImage }}"
+      }
+    ],
+
+  "address": [
+    {
+      "line": [
+        "{{ $patient.address1 }}",
+        {{ if $patient.address2 }}"{{ $patient.address2 }}"{{ end }}
+      ],
+      "city": "{{ $patient.city }}",
+      "state": "{{ $patient.state }}",
+      "postalCode": "{{ $patient.zip }}",
+      "country": "{{ $patient.countrycode3166 }}"
+    }
+  ],
+  "telecom": [
+    {
+      "system": "phone",
+      "value": "{{ $patient.homephone }}",
+      "use": "home"
+    },
+    {{ if $patient.workphone }}
+    {
+      "system": "phone",
+      "value": "{{ $patient.workphone }}",
+      "use": "work"
+    },
+    {{ end }}
+    {{ if $patient.mobilephone }}
+    {
+      "system": "phone",
+      "value": "{{ $patient.mobilephone }}",
+      "use": "mobile"
+    },
+    {{ end }}
+    {{ if $patient.email }}
+    {
+      "system": "email",
+      "value": "{{ $patient.email }}"
+    }
+    {{ end }}
+  ],
+  "identifier": [
+  {
+    "type": {
+      "text": "ssn",
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+          "code": "SS"
+        }
+      ]
+    },
+    "system": "http://hl7.org/fhir/sid/us-ssn",
+    "value": "{{ $patient.ssn }}"
+  },
+  {{ if $patient.driverslicensenumber }}
+  {
+    "type": {
+      "text": "drivers license",
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+          "code": "DL"
+        }
+      ]
+    },
+    "system": "http://hl7.org/fhir/sid/us-dl",
+    "value": "{{ $patient.driverslicensenumber }}",
+    "use": "official",
+    "period": {
+      {{ if $patient.driverslicenseexpirationdate }}
+      "end": "{{ formatDate $patient.driverslicenseexpirationdate }}"
+      {{ end }}
+    },
+    "assigner": {
+      {{ if $patient.driverslicensestateid }}
+      "reference": "{{ $patient.driverslicensestateid }}"
+      {{ end }}
+    }
+  },
+{{ end }}
+
+
+],
+  {{ if $patient.primaryproviderid }}
+  "generalPractitioner": [
+    {
+      "reference": "Practitioner/{{ $patient.primaryproviderid }}"
+    }
+  ],
+  {{ end }}
+  "extension": [
+      {{ if $patient.sex }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/legal-sex",
+      "valueCode": "{{ $patient.sex }}"
+    },
+    {{ end }}
+
+    {{ if $patient.assignedsexatbirth }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/assigned-sex-at-birth",
+      "valueCode": "{{ $patient.assignedsexatbirth }}"
+    },
+    {{ end }}
+
+    {{ if $patient.genderidentityother }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/gender-identity-other",
+      "valueString": "{{ $patient.genderidentityother }}"
+    },
+    {{ end }}
+
+    {{ if $patient.countrycode }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/country-code",
+      "valueString": "{{ $patient.countrycode }}"
+    },
+    {{ end }}
+
+    {{ if $patient.defaultpharmacyncpdpid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/default-pharmacy-ncpdp-id",
+      "valueString": "{{ $patient.defaultpharmacyncpdpid }}"
+    },
+    {{ end }}
+
+    {{ if $patient.clinicalordertypegroupid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/clinical-order-type-group-id",
+      "valueString": "{{ $patient.clinicalordertypegroupid }}"
+    },
+    {{ end }}
+
+    {{ if $patient.industrycode }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/industry-code",
+      "valueString": "{{ $patient.industrycode }}"
+    },
+    {{ end }}
+
+    {{ if $patient.occupationcode }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/occupation-code",
+      "valueString": "{{ $patient.occupationcode }}"
+    },
+    {{ end }}
+
+    {{ if $patient.portalaccessgiven }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/portal-access-given",
+      "valueBoolean": {{ $patient.portalaccessgiven }}
+    },
+    {{ end }}
+
+    {{ if $patient.mobilecarrierid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/mobile-carrier-id",
+      "valueString": "{{ $patient.mobilecarrierid }}"
+    },
+    {{ end }}
+
+    {{ if $patient.notes }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/notes",
+      "valueString": "{{ $patient.notes }}"
+    },
+    {{ end }}
+
+    {{ if $patient.preferredpronouns }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/preferred-pronouns",
+      "valueString": "{{ $patient.preferredpronouns }}"
+    },
+    {{ end }}
+
+    {{ if $patient.primarydepartmentid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/primary-department-id",
+      "valueString": "{{ $patient.primarydepartmentid }}"
+    },
+    {{ end }}
+
+    {{ if $patient.departmentid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/department-id",
+      "valueInteger": {{ $patient.departmentid }}
+    },
+    {{ end }}
+
+    {{ if $patient.referralsourceid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/referral-source-id",
+      "valueString": "{{ $patient.referralsourceid }}"
+    },
+    {{ end }}
+
+    {{ if $patient.referralsourceother }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/referral-source-other",
+      "valueString": "{{ $patient.referralsourceother }}"
+    },
+    {{ end }}
+
+    {{ if $patient.registrationdate }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/registration-date",
+      "valueString": "{{ formatDate $patient.registrationdate }}"
+    },
+    {{ end }}
+
+    {{ if $patient.sexualorientation }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/sexual-orientation",
+      "valueString": "{{ $patient.sexualorientation }}"
+    },
+    {{ end }}
+
+    {{ if $patient.sexualorientationother }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/sexual-orientation-other",
+      "valueString": "{{ $patient.sexualorientationother }}"
+    },
+    {{ end }}
+
+    {{ if $patient.status }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/status",
+      "valueString": "{{ $patient.status }}"
+    },
+    {{ end }}
+
+    {{ if $patient.allpatientstatuses }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/all-patient-statuses",
+      "valueString": "{{ $patient.allpatientstatuses }}"
+    },
+    {{ end }}
+
+    {{ if $patient.localpatientid }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/local-patient-id",
+      "valueString": "{{ $patient.localpatientid }}"
+    },
+    {{ end }}
+
+    {{ if $patient.previouspatientids }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/previous-patient-ids",
+      "valueString": "{{ $patient.previouspatientids }}"
+    },
+    {{ end }}
+
+    {{ if $patient.veteran }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/veteran",
+      "valueString": "{{ $patient.veteran }}"
+    },
+    {{ end }}
+
+    {{ if $patient.ignorerestrictions }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/ignore-restrictions",
+      "valueBoolean": {{ $patient.ignorerestrictions }}
+    },
+    {{ end }}
+
+    {{ if $patient.ethnicitycodes }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/ethnicity-codes",
+      "extension": [
+        {{- range $index, $code := $patient.ethnicitycodes }}
+        {{- if $index }},{{ end }}
+        {
+          "url": "http://xcaliber-fhir/structureDefinition/ethnicity-codes",
+          "valueCode": "{{ $code }}"
+        }
+        {{- end }}
+      ]
+    },
+    {{ end }}
+    {{ if $patient.ethnicitycodes }}
+    {
+      "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+      "extension": [
+        {{- range $index, $code := $patient.ethnicitycodes }}
+        {{- if $index }},{{ end }}
+        {
+          "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",
+          "valueCode": "{{ $code }}"
+        }
+        {{- end }}
+      ]
+    },
+    {{ end }}
+
+    {{ if $patient.race }}
+    {
+      "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
+      "extension": [
+        {{- if isArray $patient.race }}
+          {{- range $index, $race := $patient.race }}
+            {{- if $index }},{{ end }}
+            {
+              "url": "ombCategory",
+              "valueCoding": {
+                "system": "urn:oid:2.16.840.1.113883.6.238",
+                "code": "{{ $race }}",
+                "display": "{{ getDisplayNameForRaceCode $race }}"
+              }
+            }
+          {{- end }}
+        {{ else }}
+          {
+            "url": "ombCategory",
+            "valueCoding": {
+              "system": "urn:oid:2.16.840.1.113883.6.238",
+              "code": "{{ $patient.race }}",
+              "display": "{{ getDisplayNameForRaceCode $patient.race }}"
+            }
+          }
+        {{- end }}
+      ]
+    },
+    {{ end }}
+    {{ if $patient.assignedsexatbirth }}
+    {
+      "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+      "valueCode": "{{ $patient.assignedsexatbirth }}"
+    },
+    {{ end }}
+
+    {{ if $patient.ssn }}
+    {
+      "url": "http://xcaliber-fhir/structureDefinition/ssn",
+      "valueString": "{{ $patient.ssn }}"
+    },
+    {{ end }}
+
+],
+  "contained": [
+    {{ if $patient.guarantorfirstname }}
+    {
+      "resourceType": "RelatedPerson",
+      "relationship": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+          "code": "O"
+        }],
+        "text": "Guarantor"
+      }],
+      "name": [{
+        "given": ["{{ $patient.guarantorfirstname }}", "{{ $patient.guarantormiddlename }}"],
+        "family": "{{ $patient.guarantorlastname }}",
+        "suffix": "{{ $patient.guarantorsuffix }}"
+      }],
+      "patient": {
+        "reference": "Patient/{{ $patient.patientid }}"
+      },
+      "telecom": [
+        {
+          "system": "phone",
+          "value": "{{ $patient.guarantorphone }}"
+        },
+        {
+          "system": "email",
+          "value": "{{ $patient.guarantoremail }}"
+        }
+      ],
+      "birthDate": "{{ formatDate $patient.guarantordob }}",
+      {{ if $patient.languagecode }}
+        "communication": [
+          {
+            "language": {
+              "coding": [
+                {
+                  "system": "http://hl7.org/fhir/ValueSet/all-languages",
+                  "code": "{{ $patient.languagecode }}"
+                }
+              ]
+            }
+          }
+        ],
+        {{ end }}
+
+      "identifier": [{
+        "system": "https://xcaliberapis.structureDefinition/guarantor-ssn",
+        "value": "{{ $patient.guarantorssn }}"
+      }],
+      "address": [{
+        "line": ["{{ $patient.guarantoraddress1 }}", "{{ $patient.guarantoraddress2 }}"],
+        "city": "{{ $patient.guarantorcity }}",
+        "state": "{{ $patient.guarantorstate }}",
+        "postalCode": "{{ $patient.guarantorzip }}",
+        "country": "{{ $patient.guarantorcountrycode3166 }}"
+      }]
+    },
+    {{ end }}
+    {{ if $patient.employerid }}
+    {
+      "resourceType": "RelatedPerson",
+      "id": "{{ $patient.employerid }}",
+      "relationship": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0131..htmlhtml",
+          "code": "E",
+          "display": "Employer"
+        }]
+      }],
+      "telecom": [
+        {{ if $patient.employerphone }}
+        {
+          "system": "phone",
+          "value": "{{ $patient.employerphone }}"
+        }
+        {{ end }}
+      ]
+    },
+    {{ end }}
+
+    {{ if $patient.guardianfirstname }}
+    {
+      "resourceType": "RelatedPerson",
+      "relationship": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+          "code": "O"
+        }],
+        "text": "Guardian"
+      }],
+      "name": [{
+        "given": ["{{ $patient.guardianfirstname }}", "{{ $patient.guardianmiddlename }}"],
+        "family": "{{ $patient.guardianlastname }}",
+        "suffix": "{{ $patient.guardiansuffix }}"
+      }]
+    },
+    {{ end }}
+
+    {{ if $patient.nextkinname }}
+    {
+      "resourceType": "RelatedPerson",
+      "relationship": [{
+        "coding": [{
+          "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+          "code": "N",
+          "display": "{{ $patient.nextkinrelationship }}"
+        }]
+      }],
+      "name": [{
+        "given": ["{{ $patient.nextkinname }}"]
+      }],
+      "telecom": [{
+        "system": "phone",
+        "value": "{{ $patient.nextkinphone }}"
+      }]
+    },
+    {{ end }}
+
+    {{ if or $patient.consenttotext $patient.consenttocall }}
+    {
+      "resourceType": "Consent",
+      "status": "active",
+      "extension": [
+        {{ if $patient.consenttotext }}
+        {
+          "url": "http://xcaliber-fhir/structureDefinition/consent-to-text",
+          "valueBoolean": {{ $patient.consenttotext }}
+        },
+        {{ end }}
+        {{ if $patient.consenttocall }}
+        {
+          "url": "http://xcaliber-fhir/structureDefinition/consent-to-call",
+          "valueBoolean": {{ $patient.consenttocall }}
+        }
+        {{ end }}
+      ]
+    },
+    {{ end }}
+
+
+   {
+    "resourceType": "QuestionnaireResponse",
+    "status": "completed",
+    "item": [
+      {{ if $patient.caresummarydeliverypreference }}
+      {
+        "linkId": "caresummarydeliverypreference",
+        "answer": [{ "valueString": "{{ $patient.caresummarydeliverypreference }}" }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_announcement_email }}
+      {
+        "linkId": "contactpreference_announcement_email",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_announcement_email }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_announcement_sms }}
+      {
+        "linkId": "contactpreference_announcement_sms",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_announcement_sms }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_announcement_phone }}
+      {
+        "linkId": "contactpreference_announcement_phone",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_announcement_phone }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_appointment_email }}
+      {
+        "linkId": "contactpreference_appointment_email",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_appointment_email }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_appointment_phone }}
+      {
+        "linkId": "contactpreference_appointment_phone",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_appointment_phone }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_appointment_sms }}
+      {
+        "linkId": "contactpreference_appointment_sms",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_appointment_sms }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_billing_email }}
+      {
+        "linkId": "contactpreference_billing_email",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_billing_email }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_billing_phone }}
+      {
+        "linkId": "contactpreference_billing_phone",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_billing_phone }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_billing_sms }}
+      {
+        "linkId": "contactpreference_billing_sms",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_billing_sms }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_lab_email }}
+      {
+        "linkId": "contactpreference_lab_email",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_lab_email }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_lab_sms }}
+      {
+        "linkId": "contactpreference_lab_sms",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_lab_sms }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.contactpreference_lab_phone }}
+      {
+        "linkId": "contactpreference_lab_phone",
+        "answer": [{ "valueBoolean": {{ $patient.contactpreference_lab_phone }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.donotcallyn }}
+      {
+        "linkId": "donotcallyn",
+        "answer": [{ "valueBoolean": {{ $patient.donotcallyn }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.hasmobileyn }}
+      {
+        "linkId": "hasmobileyn",
+        "answer": [{ "valueBoolean": {{ $patient.hasmobileyn }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.homeboundyn }}
+      {
+        "linkId": "homeboundyn",
+        "answer": [{ "valueBoolean": {{ $patient.homeboundyn }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.homeless }}
+      {
+        "linkId": "homeless",
+        "answer": [{ "valueString": "{{ $patient.homeless }}" }]
+      },
+      {{ end }}
+
+      {{ if $patient.homelesstype }}
+      {
+        "linkId": "homelesstype",
+        "answer": [{ "valueString": "{{ $patient.homelesstype }}" }]
+      },
+      {{ end }}
+
+      {{ if $patient.onlinestatementonlyyn }}
+      {
+        "linkId": "onlinestatementonlyyn",
+        "answer": [{ "valueBoolean": {{ $patient.onlinestatementonlyyn }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelcalculated }}
+      {
+        "linkId": "povertylevelcalculated",
+        "answer": [{ "valueDecimal": {{ $patient.povertylevelcalculated }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelfamilysize }}
+      {
+        "linkId": "povertylevelfamilysize",
+        "answer": [{ "valueDecimal": {{ $patient.povertylevelfamilysize }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelfamilysizedeclined }}
+      {
+        "linkId": "povertylevelfamilysizedeclined",
+        "answer": [{ "valueBoolean": {{ $patient.povertylevelfamilysizedeclined }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelincomedeclined }}
+      {
+        "linkId": "povertylevelincomedeclined",
+        "answer": [{ "valueBoolean": {{ $patient.povertylevelincomedeclined }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelincomepayperiod }}
+      {
+        "linkId": "povertylevelincomepayperiod",
+        "answer": [{ "valueString": "{{ $patient.povertylevelincomepayperiod }}" }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelincomeperpayperiod }}
+      {
+        "linkId": "povertylevelincomeperpayperiod",
+        "answer": [{ "valueInteger": {{ $patient.povertylevelincomeperpayperiod }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.povertylevelincomerangedeclined }}
+      {
+        "linkId": "povertylevelincomerangedeclined",
+        "answer": [{ "valueBoolean": {{ $patient.povertylevelincomerangedeclined }} }]
+      },
+      {{ end }}
+
+      {{ if $patient.publichousing }}
+      {
+        "linkId": "publichousing",
+        "answer": [{ "valueString": "{{ $patient.publichousing }}" }]
+      },
+      {{ end }}
+
+      {{ if $patient.schoolbasedhealthcenter }}
+      {
+        "linkId": "schoolbasedhealthcenter",
+        "answer": [{ "valueString": "{{ $patient.schoolbasedhealthcenter }}" }]
+      },
+      {{ end }}
+
+      {{ if $patient.veteran }}
+      {
+        "linkId": "veteran",
+        "answer": [{ "valueString": "{{ $patient.veteran }}" }]
+      },
+      {{ end }}
+      
+    {{- range $index, $cf := $patient.customfields }}
+    {
+      "linkId": "{{ $cf.customfieldid }}",
+      "text": "Custom Field",
+      "answer": [
+        {{- if $cf.optionid }}
+        {
+          "valueCoding": {
+            "code": "{{ $cf.optionid }}",
+            "display": "{{ $cf.customfieldvalue }}"
+          }
+        }
+        {{- else }}
+        {
+          "valueString": "{{ $cf.customfieldvalue }}"
+        }
+        {{- end }}
+      ]
+    }{{ if not (last $index $patient.customfields) }},{{ end }}
+{{- end }}
+
+
+
+    ]
+  },
+  {{ if or $patient.patientsignature $patient.insuredsignature $patient.privacynotice }}
+  {
+    "resourceType": "Provenance",
+    "signature": [
+      {{ if $patient.patientsignature }}
+      {
+        {{ if $patient.patientsignatureeffectivedate }}
+        "when": "{{ formatDate $patient.patientsignatureeffectivedate }}",
+        {{ end }}
+        "extension": [
+          {{ if $patient.patientsignatureexpirationdate }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/patient-signature-expiration-date",
+            "valueDate": "{{ formatDate $patient.patientsignatureexpirationdate }}"
+          },
+          {{ end }}
+          {{ if $patient.ispatientsignatureonfile }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/is-patient-signature-on-file",
+            "valueBoolean": {{ $patient.ispatientsignatureonfile }}
+          }
+          {{ end }}
+        ]
+      }{{ if or $patient.insuredsignature $patient.privacynotice }},{{ end }}
+      {{ end }}
+
+      {{ if $patient.insuredsignature }}
+      {
+        {{ if $patient.insuredsignatureeffectivedate }}
+        "when": "{{ formatDate $patient.insuredsignatureeffectivedate }}",
+        {{ end }}
+        "extension": [
+          {{ if $patient.insuredsignatureexpirationdate }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/insured-signature-expiration-date",
+            "valueDate": "{{ formatDate $patient.insuredsignatureexpirationdate }}"
+          },
+          {{ end }}
+          {{ if $patient.isinsuredsignatureonfile }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/is-insured-signature-on-file",
+            "valueBoolean": {{ $patient.isinsuredsignatureonfile }}
+          }
+          {{ end }}
+        ]
+      }{{ if $patient.privacynotice }},{{ end }}
+      {{ end }}
+
+      {{ if $patient.privacynotice }}
+      {
+        {{ if $patient.privacynoticegivendate }}
+        "when": "{{ formatDate $patient.privacynoticegivendate }}",
+        {{ end }}
+        "extension": [
+          {{ if $patient.isprivacynoticeonfile }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/is-privacy-notice-on-file",
+            "valueBoolean": {{ $patient.isprivacynoticeonfile }}
+          },
+          {{ end }}
+          {{ if $patient.privacynoticenotgivennote }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/privacy-notice-not-given-note",
+            "valueString": "{{ $patient.privacynoticenotgivennote }}"
+          },
+          {{ end }}
+          {{ if $patient.privacynoticenotgivenreason }}
+          {
+            "url": "http://xcaliber-fhir/structureDefinition/privacy-notice-not-given-reason",
+            "valueString": "{{ $patient.privacynoticenotgivenreason }}"
+          }
+          {{ end }}
+        ]
+      }
+      {{ end }}
+    ]
+  }
+  {{ end }}
+  ]
+}
