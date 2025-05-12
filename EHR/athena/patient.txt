@@ -90,7 +90,7 @@
             "value": "{{ $patient.mobilephone }}",
             "use": "mobile",
             "extension": []
-          },
+          }
           {{ end }}
 
         ],
@@ -130,25 +130,30 @@
     }
   ],
   "telecom": [
+    {{ if $patient.homephone }}
     {
       "system": "phone",
       "value": "{{ $patient.homephone }}",
       "use": "home"
-    },
+    }{{ if or $patient.workphone $patient.mobilephone $patient.email }},{{ end }}
+    {{ end }}
+
     {{ if $patient.workphone }}
     {
       "system": "phone",
       "value": "{{ $patient.workphone }}",
       "use": "work"
-    },
+    }{{ if or $patient.mobilephone $patient.email }},{{ end }}
     {{ end }}
+
     {{ if $patient.mobilephone }}
     {
       "system": "phone",
       "value": "{{ $patient.mobilephone }}",
       "use": "mobile"
-    },
+    }{{ if $patient.email }},{{ end }}
     {{ end }}
+
     {{ if $patient.email }}
     {
       "system": "email",
@@ -160,26 +165,20 @@
   {
     "type": {
       "text": "ssn",
-      "coding": [
-        {
-          "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-          "code": "SS"
-        }
-      ]
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+        "code": "SS"
+      }]
     },
     "system": "http://hl7.org/fhir/sid/us-ssn",
     "value": "{{ $patient.ssn }}"
-  },
-  {{ if $patient.driverslicensenumber }}
-  {
+  }{{ if $patient.driverslicensenumber }},{
     "type": {
       "text": "drivers license",
-      "coding": [
-        {
-          "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
-          "code": "DL"
-        }
-      ]
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+        "code": "DL"
+      }]
     },
     "system": "http://hl7.org/fhir/sid/us-dl",
     "value": "{{ $patient.driverslicensenumber }}",
@@ -194,11 +193,9 @@
       "reference": "{{ $patient.driverslicensestateid }}"
       {{ end }}
     }
-  },
-{{ end }}
-
-
+  }{{ end }}
 ],
+
   {{ if $patient.primaryproviderid }}
   "generalPractitioner": [
     {
@@ -451,151 +448,164 @@
     {
       "url": "http://xcaliber-fhir/structureDefinition/ssn",
       "valueString": "{{ $patient.ssn }}"
-    },
+    }
     {{ end }}
 
 ],
   "contained": [
-    {{ if $patient.guarantorfirstname }}
-    {
-      "resourceType": "RelatedPerson",
-      "relationship": [{
-        "coding": [{
-          "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
-          "code": "O"
-        }],
-        "text": "Guarantor"
-      }],
-      "name": [{
-        "given": ["{{ $patient.guarantorfirstname }}", "{{ $patient.guarantormiddlename }}"],
-        "family": "{{ $patient.guarantorlastname }}",
-        "suffix": "{{ $patient.guarantorsuffix }}"
-      }],
-      "patient": {
-        "reference": "Patient/{{ $patient.patientid }}"
-      },
-      "telecom": [
-        {
-          "system": "phone",
-          "value": "{{ $patient.guarantorphone }}"
-        },
-        {
-          "system": "email",
-          "value": "{{ $patient.guarantoremail }}"
-        }
-      ],
-      "birthDate": "{{ formatDate $patient.guarantordob }}",
-      {{ if $patient.languagecode }}
-        "communication": [
-          {
-            "language": {
-              "coding": [
-                {
-                  "system": "http://hl7.org/fhir/ValueSet/all-languages",
-                  "code": "{{ $patient.languagecode }}"
-                }
-              ]
-            }
-          }
-        ],
-        {{ end }}
+  {{- $hasPrev := false }}
 
-      "identifier": [{
-        "system": "https://xcaliberapis.structureDefinition/guarantor-ssn",
-        "value": "{{ $patient.guarantorssn }}"
+  {{- if $patient.guarantorfirstname }}
+  {{- if $hasPrev }},{{ end }}
+  {
+    "resourceType": "RelatedPerson",
+    "relationship": [{
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+        "code": "O"
       }],
-      "address": [{
-        "line": ["{{ $patient.guarantoraddress1 }}", "{{ $patient.guarantoraddress2 }}"],
-        "city": "{{ $patient.guarantorcity }}",
-        "state": "{{ $patient.guarantorstate }}",
-        "postalCode": "{{ $patient.guarantorzip }}",
-        "country": "{{ $patient.guarantorcountrycode3166 }}"
-      }]
+      "text": "Guarantor"
+    }],
+    "name": [{
+      "given": ["{{ $patient.guarantorfirstname }}", "{{ $patient.guarantormiddlename }}"],
+      "family": "{{ $patient.guarantorlastname }}",
+      "suffix": "{{ $patient.guarantorsuffix }}"
+    }],
+    "patient": {
+      "reference": "Patient/{{ $patient.patientid }}"
     },
-    {{ end }}
-    {{ if $patient.employerid }}
-    {
-      "resourceType": "RelatedPerson",
-      "id": "{{ $patient.employerid }}",
-      "relationship": [{
-        "coding": [{
-          "system": "http://terminology.hl7.org/CodeSystem/v2-0131..htmlhtml",
-          "code": "E",
-          "display": "Employer"
-        }]
-      }],
-      "telecom": [
-        {{ if $patient.employerphone }}
-        {
-          "system": "phone",
-          "value": "{{ $patient.employerphone }}"
-        }
-        {{ end }}
-      ]
-    },
-    {{ end }}
-
-    {{ if $patient.guardianfirstname }}
-    {
-      "resourceType": "RelatedPerson",
-      "relationship": [{
-        "coding": [{
-          "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
-          "code": "O"
-        }],
-        "text": "Guardian"
-      }],
-      "name": [{
-        "given": ["{{ $patient.guardianfirstname }}", "{{ $patient.guardianmiddlename }}"],
-        "family": "{{ $patient.guardianlastname }}",
-        "suffix": "{{ $patient.guardiansuffix }}"
-      }]
-    },
-    {{ end }}
-
-    {{ if $patient.nextkinname }}
-    {
-      "resourceType": "RelatedPerson",
-      "relationship": [{
-        "coding": [{
-          "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
-          "code": "N",
-          "display": "{{ $patient.nextkinrelationship }}"
-        }]
-      }],
-      "name": [{
-        "given": ["{{ $patient.nextkinname }}"]
-      }],
-      "telecom": [{
+    "telecom": [
+      {
         "system": "phone",
-        "value": "{{ $patient.nextkinphone }}"
-      }]
-    },
-    {{ end }}
-
-    {{ if or $patient.consenttotext $patient.consenttocall }}
-    {
-      "resourceType": "Consent",
-      "status": "active",
-      "extension": [
-        {{ if $patient.consenttotext }}
-        {
-          "url": "http://xcaliber-fhir/structureDefinition/consent-to-text",
-          "valueBoolean": {{ $patient.consenttotext }}
-        },
-        {{ end }}
-        {{ if $patient.consenttocall }}
-        {
-          "url": "http://xcaliber-fhir/structureDefinition/consent-to-call",
-          "valueBoolean": {{ $patient.consenttocall }}
+        "value": "{{ $patient.guarantorphone }}"
+      },
+      {
+        "system": "email",
+        "value": "{{ $patient.guarantoremail }}"
+      }
+    ],
+    "birthDate": "{{ formatDate $patient.guarantordob }}",
+    {{ if $patient.languagecode }}
+    "communication": [
+      {
+        "language": {
+          "coding": [
+            {
+              "system": "http://hl7.org/fhir/ValueSet/all-languages",
+              "code": "{{ $patient.languagecode }}"
+            }
+          ]
         }
-        {{ end }}
-      ]
-    },
+      }
+    ],
     {{ end }}
+    "identifier": [{
+      "system": "https://xcaliberapis.structureDefinition/guarantor-ssn",
+      "value": "{{ $patient.guarantorssn }}"
+    }],
+    "address": [{
+      "line": ["{{ $patient.guarantoraddress1 }}", "{{ $patient.guarantoraddress2 }}"],
+      "city": "{{ $patient.guarantorcity }}",
+      "state": "{{ $patient.guarantorstate }}",
+      "postalCode": "{{ $patient.guarantorzip }}",
+      "country": "{{ $patient.guarantorcountrycode3166 }}"
+    }]
+  }
+  {{- $hasPrev = true }}
+  {{- end }}
 
+  {{- if $patient.employerid }}
+  {{- if $hasPrev }},{{ end }}
+  {
+    "resourceType": "RelatedPerson",
+    "id": "{{ $patient.employerid }}",
+    "relationship": [{
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+        "code": "E",
+        "display": "Employer"
+      }]
+    }],
+    "telecom": [
+      {{ if $patient.employerphone }}
+      {
+        "system": "phone",
+        "value": "{{ $patient.employerphone }}"
+      }
+      {{ end }}
+    ]
+  }
+  {{- $hasPrev = true }}
+  {{- end }}
 
-   {
+  {{- if $patient.guardianfirstname }}
+  {{- if $hasPrev }},{{ end }}
+  {
+    "resourceType": "RelatedPerson",
+    "relationship": [{
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+        "code": "O"
+      }],
+      "text": "Guardian"
+    }],
+    "name": [{
+      "given": ["{{ $patient.guardianfirstname }}", "{{ $patient.guardianmiddlename }}"],
+      "family": "{{ $patient.guardianlastname }}",
+      "suffix": "{{ $patient.guardiansuffix }}"
+    }]
+  }
+  {{- $hasPrev = true }}
+  {{- end }}
+
+  {{- if $patient.nextkinname }}
+  {{- if $hasPrev }},{{ end }}
+  {
+    "resourceType": "RelatedPerson",
+    "relationship": [{
+      "coding": [{
+        "system": "http://terminology.hl7.org/CodeSystem/v2-0131.html",
+        "code": "N",
+        "display": "{{ $patient.nextkinrelationship }}"
+      }]
+    }],
+    "name": [{
+      "given": ["{{ $patient.nextkinname }}"]
+    }],
+    "telecom": [{
+      "system": "phone",
+      "value": "{{ $patient.nextkinphone }}"
+    }]
+  }
+  {{- $hasPrev = true }}
+  {{- end }}
+
+  {{- if or $patient.consenttotext $patient.consenttocall }}
+  {{- if $hasPrev }},{{ end }}
+  {
+    "resourceType": "Consent",
+    "status": "active",
+    "extension": [
+      {{ if $patient.consenttotext }}
+      {
+        "url": "http://xcaliber-fhir/structureDefinition/consent-to-text",
+        "valueBoolean": {{ $patient.consenttotext }}
+      }{{ if $patient.consenttocall }},{{ end }}
+      {{ end }}
+      {{ if $patient.consenttocall }}
+      {
+        "url": "http://xcaliber-fhir/structureDefinition/consent-to-call",
+        "valueBoolean": {{ $patient.consenttocall }}
+      }
+      {{ end }}
+    ]
+  }
+  {{- $hasPrev = true }}
+  {{- end }}
+
+  {{- if or $patient.customfields (or $patient.patientsignature $patient.insuredsignature) }}
+  {{- if $hasPrev }},{{ end }}
+  {
     "resourceType": "QuestionnaireResponse",
     "status": "completed",
     "item": [
@@ -687,7 +697,7 @@
       {
         "linkId": "contactpreference_lab_phone",
         "answer": [{ "valueBoolean": {{ $patient.contactpreference_lab_phone }} }]
-      },
+      }
       {{ end }}
 
       {{ if $patient.donotcallyn }}
@@ -802,26 +812,38 @@
       },
       {{ end }}
       
-    {{- range $index, $cf := $patient.customfields }}
-    {
-      "linkId": "{{ $cf.customfieldid }}",
-      "text": "Custom Field",
-      "answer": [
-        {{- if $cf.optionid }}
-        {
-          "valueCoding": {
-            "code": "{{ $cf.optionid }}",
-            "display": "{{ $cf.customfieldvalue }}"
+    {{- $first := true }}
+      {{- range $cf := $patient.customfields }}
+      {
+        "linkId": "{{ $cf.customfieldid }}",
+        "text": "Custom Field",
+        "answer": [
+          {{- if $cf.optionid }}
+          {
+            "valueCoding": {
+              "code": "{{ $cf.optionid }}",
+              "display": "{{ $cf.customfieldvalue }}"
+            }
           }
-        }
-        {{- else }}
-        {
-          "valueString": "{{ $cf.customfieldvalue }}"
-        }
-        {{- end }}
-      ]
-    }{{ if not (last $index $patient.customfields) }},{{ end }}
-{{- end }}
+          {{- else }}
+          {
+            "valueString": "{{ $cf.customfieldvalue }}"
+          }
+          {{- end }}
+        ]
+      }
+      {{- end }}
+
+  
+
+
+
+  
+
+  {{- $hasPrev = true }}
+  {{- end }}
+
+
 
 
 

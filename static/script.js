@@ -119,3 +119,20 @@ function processInput() {
         outputEditor.setValue("Error: " + err.message);
     });
 }
+function goToCompare() {
+    const output = outputEditor.getValue();
+  
+    if (!output.trim()) {
+      alert("Please run the mapper to generate output first.");
+      return;
+    }
+  
+    try {
+      JSON.parse(output); 
+      localStorage.setItem("lastOutputJSON", output);
+      window.location.href = "/compare"; 
+    } catch (e) {
+      alert("Output is not valid JSON. Cannot compare.");
+    }
+  }
+  

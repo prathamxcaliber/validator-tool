@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compare JSON</title>
+
+  <!-- CodeMirror -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css"
+  />
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/material-darker.min.css"
+  />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+
+  <!-- Diff Library -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/jsondiffpatch/public/formatters-styles/html.css"
+  />
+  <script src="https://cdn.jsdelivr.net/npm/jsondiffpatch/dist/jsondiffpatch.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/style.css" />
+
+  <style>
+    /* Base page styling */
+    body {
+      background-color: #1e1e1e;
+      color: #ffffff;
+      font-family: monospace;
+    }
+  
+    /* The diff container */
+    #diffOutput {
+      background-color: #1e1e1e;
+      padding: 16px;
+      overflow: auto;
+      max-height: 500px;
+      border: 1px solid #444;
+      font-size: 14px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+  
+    /* Normal (unchanged) JSON */
+    .jsondiffpatch-unchanged,
+    .jsondiffpatch-value,
+    .jsondiffpatch-property-name {
+      color: #ffffff !important;
+    }
+  
+    /* Added block */
+    .jsondiffpatch-added {
+      background-color: #aaffaa !important;
+      border-left: 3px solid #00dd99 !important;
+      color: #000000 !important;
+    }
+    .jsondiffpatch-added *,
+    ins.jsondiffpatch-added {
+      color: #000000 !important;
+    }
+  
+    /* Deleted block */
+    .jsondiffpatch-deleted {
+      background-color: #ffaaaa !important;
+      border-left: 3px solid #ff4444 !important;
+      color: #000000 !important;
+      text-decoration: line-through;
+    }
+    .jsondiffpatch-deleted *,
+    del.jsondiffpatch-deleted {
+      color: #000000 !important;
+    }
+  
+    /* Modified block */
+    .jsondiffpatch-modified {
+      background-color: #fff599 !important;
+      border-left: 3px solid #cccc00 !important;
+      color: #000000 !important;
+    }
+    .jsondiffpatch-modified * {
+      color: #000000 !important;
+    }
+  
+    /* Ensure any nested <span> or <pre> tags inherit black text */
+    .jsondiffpatch-added span,
+    .jsondiffpatch-deleted span,
+    .jsondiffpatch-modified span,
+    .jsondiffpatch-added pre,
+    .jsondiffpatch-deleted pre,
+    .jsondiffpatch-modified pre {
+      color: #000000 !important;
+    }
+  </style>
+  
+  
+
+</head>
+
+<body>
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <span>Compare Generated JSON</span>
+  </div>
+
+  <!-- Editors -->
+  <div class="container">
+    <div class="editor">
+      <textarea id="leftEditor" placeholder="Generated JSON (readonly)"></textarea>
+    </div>
+    <div class="editor">
+      <textarea id="rightEditor" placeholder="Paste comparison JSON here..."></textarea>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions">
+    <button onclick="compareJSON()">Compare</button>
+    <button onclick="history.back()">← Back</button>
+  </div>
+
+  <!-- Diff Output -->
+  <div id="diffOutput"></div>
+
+  <!-- Script -->
+  <script>
+    let leftEditor, rightEditor;
+
+    window.onload = function () {
+      leftEditor = CodeMirror.fromTextArea(document.getElementById("leftEditor"), {
+        mode: "application/json",
+        theme: "material-darker",
+        lineNumbers: true,
+        readOnly: false
+      });
+
+      rightEditor = CodeMirror.fromTextArea(document.getElementById("rightEditor"), {
+        mode: "application/json",
+        theme: "material-darker",
+        lineNumbers: true
+      });
+
+      // Optionally preload data into left editor via query param/localStorage
+      const storedJSON = localStorage.getItem("lastOutputJSON");
+      if (storedJSON) {
+        leftEditor.setValue(storedJSON);
+      }
+    };
+
+    function compareJSON() {
+      try {
+        const left = JSON.parse(leftEditor.getValue());
+        const right = JSON.parse(rightEditor.getValue());
+
+        const delta = jsondiffpatch.diff(left, right);
+
+        if (!delta) {
+          document.getElementById("diffOutput").innerHTML = "<b>No differences found 🎉</b>";
+          return;
+        }
+
+        const html = jsondiffpatch.formatters.html.format(delta, left);
+        document.getElementById("diffOutput").innerHTML = html;
+      } catch (e) {
+        document.getElementById("diffOutput").innerHTML = `<span style="color:red">Invalid JSON: ${e.message}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>

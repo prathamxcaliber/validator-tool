@@ -103,6 +103,7 @@ func handleProcess(w http.ResponseWriter, r *http.Request) {
 
 	// Register functions
     funcMap := template.FuncMap{
+		"sub1": func(x int) int { return x - 1 },
         "formatDate": func(date string) string {
             parsed, err := time.Parse("01/02/2006", date)
             if err != nil {
